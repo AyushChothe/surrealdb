@@ -1,3 +1,4 @@
+use crate::idx::ft::MatchRef;
 use crate::sql::idiom::Idiom;
 use crate::sql::value::Value;
 use base64_lib::DecodeError as Base64Error;
@@ -60,6 +61,10 @@ pub enum Error {
 	/// The transaction writes too much data for the KV store
 	#[error("Transaction is too large")]
 	TxTooLarge,
+
+	/// The context does have any transaction
+	#[error("No transaction")]
+	NoTx,
 
 	/// No namespace has been selected
 	#[error("Specify a namespace to use")]
@@ -243,6 +248,18 @@ pub enum Error {
 		value: String,
 	},
 
+	// The cluster node already exists
+	#[error("The node '{value}' already exists")]
+	ClAlreadyExists {
+		value: String,
+	},
+
+	// The cluster node does not exist
+	#[error("The node '{value}' does not exist")]
+	ClNotFound {
+		value: String,
+	},
+
 	/// The requested scope token does not exist
 	#[error("The scope token '{value}' does not exist")]
 	StNotFound {
@@ -264,6 +281,12 @@ pub enum Error {
 	/// The requested analyzer does not exist
 	#[error("The analyzer '{value}' does not exist")]
 	AzNotFound {
+		value: String,
+	},
+
+	/// The requested analyzer does not exist
+	#[error("The index '{value}' does not exist")]
+	IxNotFound {
 		value: String,
 	},
 
@@ -408,6 +431,10 @@ pub enum Error {
 	#[error("Cannot raise the value '{0}' with '{1}'")]
 	TryPow(String, String),
 
+	/// Cannot perform negation
+	#[error("Cannot negate the value '{0}'")]
+	TryNeg(String),
+
 	/// It's is not possible to convert between the two types
 	#[error("Cannot convert from '{0}' to '{1}'")]
 	TryFrom(String, &'static str),
@@ -432,13 +459,23 @@ pub enum Error {
 	#[error("Key decoding error: {0}")]
 	Decode(#[from] DecodeError),
 
-	/// Represents an error when decoding a key-value entry
+	/// The index has been found to be inconsistent
 	#[error("Index is corrupted")]
 	CorruptedIndex,
 
+	/// The query planner did not find an index able to support the match @@ operator on a given expression
+	#[error("There was no suitable full-text index supporting the expression '{value}'")]
+	NoIndexFoundForMatch {
+		value: String,
+	},
+
 	/// Represents an error when analyzing a value
-	#[error("A string can't be analyzed: {0}")]
+	#[error("A value can't be analyzed: {0}")]
 	AnalyzerError(String),
+
+	/// Represents an error when trying to highlight a value
+	#[error("A value can't be highlighted: {0}")]
+	HighlightError(String),
 
 	/// Represents an underlying error with Bincode serializing / deserializing
 	#[error("Bincode error: {0}")]
@@ -456,6 +493,16 @@ pub enum Error {
 	#[error("Feature not yet implemented: {feature}")]
 	FeatureNotYetImplemented {
 		feature: &'static str,
+	},
+
+	#[doc(hidden)]
+	#[error("Bypass the query planner")]
+	BypassQueryPlanner,
+
+	/// Duplicated match references are not allowed
+	#[error("Duplicated Match reference: {mr}")]
+	DuplicatedMatchRef {
+		mr: MatchRef,
 	},
 }
 

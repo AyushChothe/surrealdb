@@ -12,7 +12,7 @@ storage-mem = ["surrealdb/kv-mem"]
 storage-rocksdb = ["surrealdb/kv-rocksdb"]
 storage-speedb = ["surrealdb/kv-speedb"]
 storage-tikv = ["surrealdb/kv-tikv"]
-storage-fdb = ["surrealdb/kv-fdb-6_3"]
+storage-fdb = ["surrealdb/kv-fdb-7_1"]
 scripting = ["surrealdb/scripting"]
 http = ["surrealdb/http"]
 
@@ -32,7 +32,6 @@ strip = false
 [dependencies]
 argon2 = "0.5.0"
 base64 = "0.21.1"
-bung = "0.1.0"
 bytes = "1.4.0"
 chrono = { version = "0.4.24", features = ["serde"] }
 clap = { version = "4.2.1", features = ["env", "derive", "wrap_help", "unicode"] }

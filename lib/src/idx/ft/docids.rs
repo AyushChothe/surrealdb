@@ -8,7 +8,9 @@ use serde::{Deserialize, Serialize};
 
 pub(crate) type DocId = u64;
 
-pub(super) struct DocIds {
+pub(crate) const NO_DOC_ID: u64 = u64::MAX;
+
+pub(crate) struct DocIds {
 	state_key: Key,
 	index_key_base: IndexKeyBase,
 	btree: BTree<DocIdsKeyProvider>,
@@ -21,7 +23,7 @@ impl DocIds {
 	pub(super) async fn new(
 		tx: &mut Transaction,
 		index_key_base: IndexKeyBase,
-		default_btree_order: usize,
+		default_btree_order: u32,
 	) -> Result<Self, Error> {
 		let keys = DocIdsKeyProvider {
 			index_key_base: index_key_base.clone(),
@@ -57,6 +59,14 @@ impl DocIds {
 		let doc_id = self.next_doc_id;
 		self.next_doc_id += 1;
 		doc_id
+	}
+
+	pub(crate) async fn get_doc_id(
+		&self,
+		tx: &mut Transaction,
+		doc_key: Key,
+	) -> Result<Option<DocId>, Error> {
+		self.btree.search::<TrieKeys>(tx, &doc_key).await
 	}
 
 	/// Returns the doc_id for the given doc_key.
@@ -138,7 +148,7 @@ struct State {
 impl SerdeState for State {}
 
 impl State {
-	fn new(default_btree_order: usize) -> Self {
+	fn new(default_btree_order: u32) -> Self {
 		Self {
 			btree: btree::State::new(default_btree_order),
 			available_ids: None,
@@ -189,7 +199,7 @@ mod tests {
 	use crate::idx::IndexKeyBase;
 	use crate::kvs::{Datastore, Transaction};
 
-	const BTREE_ORDER: usize = 7;
+	const BTREE_ORDER: u32 = 7;
 
 	async fn get_doc_ids(ds: &Datastore) -> (Transaction, DocIds) {
 		let mut tx = ds.transaction(true, false).await.unwrap();
