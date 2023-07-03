@@ -17,32 +17,40 @@ async fn context_iteration_performance() -> Result<(), Error> {
 	for _ in 0..3 {
 		assert!(res.remove(0).result.is_ok());
 	}
+
 	let count = 1000;
-	for i in 0..count {
-		let j = i * 5;
-		let a = j;
-		let b = j + 1;
-		let c = j + 2;
-		let d = j + 3;
-		let e = j + 4;
-		let sql = format!(
-			r"CREATE item SET id = {a}, name = '{a}', number = 0, label='alpha';
+
+	{
+		let mut total_time = 0;
+		for i in 0..count {
+			let j = i * 5;
+			let a = j;
+			let b = j + 1;
+			let c = j + 2;
+			let d = j + 3;
+			let e = j + 4;
+			let sql = format!(
+				r"CREATE item SET id = {a}, name = '{a}', number = 0, label='alpha';
 		CREATE item SET id = {b}, name = '{b}', number = 1, label='bravo';
 		CREATE item SET id = {c}, name = '{c}', number = 2, label='charlie';
 		CREATE item SET id = {d}, name = '{d}', number = 3, label='delta';
 		CREATE item SET id = {e}, name = '{e}', number = 4, label='echo';",
-		);
-		let res = &mut dbs.execute(&sql, &ses, None, false).await?;
-		for _ in 0..5 {
-			assert!(res.remove(0).result.is_ok());
+			);
+			let time = Instant::now();
+			let res = &mut dbs.execute(&sql, &ses, None, false).await?;
+			total_time += time.elapsed().as_micros();
+			for _ in 0..5 {
+				assert!(res.remove(0).result.is_ok());
+			}
 		}
+		println!("INGESTING: {:?} micros", total_time / 5);
 	}
 
 	{
 		let mut total_time = 0;
 		for _ in 0..5 {
-			let time = Instant::now();
 			let sql = format!("SELECT * FROM item");
+			let time = Instant::now();
 			let res = &mut dbs.execute(&sql, &ses, None, false).await?;
 			total_time += time.elapsed().as_micros();
 			let value = res.remove(0).result?;
@@ -58,8 +66,8 @@ async fn context_iteration_performance() -> Result<(), Error> {
 	{
 		let mut total_time = 0;
 		for _ in 0..5 {
-			let time = Instant::now();
 			let sql = format!("SELECT * FROM item WHERE number=4");
+			let time = Instant::now();
 			let res = &mut dbs.execute(&sql, &ses, None, false).await?;
 			total_time += time.elapsed().as_micros();
 			let value = res.remove(0).result?;
